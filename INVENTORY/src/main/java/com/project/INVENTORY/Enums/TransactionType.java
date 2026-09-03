@@ -1,0 +1,5 @@
+package com.project.INVENTORY.Enums;
+
+public enum TransactionType {
+    STOCK_ADDED,STOCK_REMOVED,STOCK_RELEASED,STOCK_RESERVED,PRODUCT_DEACTIVATED;
+}

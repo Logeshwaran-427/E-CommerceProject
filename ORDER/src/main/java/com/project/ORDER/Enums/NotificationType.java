@@ -1,0 +1,6 @@
+package com.project.ORDER.Enums;
+
+public enum NotificationType {
+    
+    ORDER_CONFIRMED,ORDER_SHIPPED,ORDER_DELIVERED,ORDERITEM_SHIPPED,ORDERITEM_DELIVERED;
+}
