@@ -13,7 +13,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.project.AUTHSERVICE.DTO.ChangePasswordDTO;
+import com.project.AUTHSERVICE.DTO.CreateUserDTO;
 import com.project.AUTHSERVICE.DTO.RefreshTokenRequest;
+import com.project.AUTHSERVICE.DTO.SellerProfileDTO;
 import com.project.AUTHSERVICE.DTO.TokenResponse;
 import com.project.AUTHSERVICE.Entity.RefreshToken;
 import com.project.AUTHSERVICE.Entity.SellerProfile;
@@ -62,22 +64,32 @@ public class UserServiceLogic {
 
     //Creating new user 
 
-    public ResponseEntity<String> createNewUser(UserDet userDet){
-        log.info("New user registration request received for username={}", userDet.getUsername());
-        if(userDet.getUsername()!=null && userDet.getPassword()!=null && userDet.getEmail()!=null){
-            userDet.setPassword(passwordEncoder.encode(userDet.getPassword()));
+    public ResponseEntity<String> createNewUser(CreateUserDTO user){
+        log.info("New user registration request received for username={}", user.getUsername());
+
+            if(userDetRepo.existsByUsername(user.getUsername())){
+                return ResponseEntity.status(HttpStatus.SC_CONFLICT).body("Username already exists");
+            }
+
+            if(userDetRepo.existsByEmail(user.getEmail())){
+                return ResponseEntity.status(HttpStatus.SC_CONFLICT).body("Email already registered");
+            }
+
+            UserDet userDet=new UserDet();
+            userDet.setUsername(user.getUsername());
+            userDet.setPassword(passwordEncoder.encode(user.getPassword()));
+            userDet.setEmail(user.getEmail());
+            userDet.setPhoneNumber(user.getPhoneNumber());
             userDet.setRole(RoleEnum.USER);
             userDetRepo.save(userDet);
             log.info("User account created successfully. userId={}, username={}",userDet.getId(),userDet.getUsername());
             return ResponseEntity.status(HttpStatus.SC_CREATED).body("User Saved Successfully");
-        }
         
-        return ResponseEntity.status(HttpStatus.SC_NOT_FOUND).body("User not found");
     }
     
     //User Applying for seller
 
-    public ResponseEntity<String> applyForSupplier(SellerProfile sellerProfile){
+    public ResponseEntity<String> applyForSupplier(SellerProfileDTO seller){
         Authentication auth=SecurityContextHolder.getContext().getAuthentication();
         String name=auth.getName();
         log.info("Seller application received from user={}", name);
@@ -89,15 +101,16 @@ public class UserServiceLogic {
             log.warn("Seller application already exists for user={}", name);
             return ResponseEntity.badRequest().body("Seller request already exists");
         }
-        if(sellerProfile.getBusinessEmail()!=null && sellerProfile.getBusinessName()!=null && sellerProfile.getGst()!=null){
+            SellerProfile sellerProfile=new SellerProfile();
+            sellerProfile.setBusinessName(seller.getBusinessName());
+            sellerProfile.setBusinessEmail(seller.getBusinessEmail());
+            sellerProfile.setGst(seller.getGst());
             sellerProfile.setStatus(SellerStatus.PENDING);
             sellerProfile.setUserDet(userDet);
             sellerRepo.save(sellerProfile);
             log.info("Seller application submitted successfully. sellerId={}, username={}",sellerProfile.getId(),name);
             return ResponseEntity.status(HttpStatus.SC_CREATED).body("You have applied for Supplier. It is pending with ADMIN to approve it");
-        }
-        log.warn("Seller application failed due to missing mandatory fields. user={}", name);        
-        return ResponseEntity.badRequest().body("Fields should not be null");
+        
     }
 
     //Get List of sellers

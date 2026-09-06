@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import com.project.AUTHSERVICE.Enums.RoleEnum;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -19,6 +20,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 public class UserDet implements UserDetails {
@@ -26,9 +30,15 @@ public class UserDet implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
+    @NotBlank (message = "Enter your name")
     String username;
+    @NotBlank(message = "Email is required")
+    @Email (message = "Enter valid email")
     String email;
+    @NotBlank(message = "Password is required")
+    @Column (nullable = false)
     String password;
+    @NotBlank(message = "Phone number is required")
     String phoneNumber;
     Boolean isActive;
     LocalDateTime createdDate;

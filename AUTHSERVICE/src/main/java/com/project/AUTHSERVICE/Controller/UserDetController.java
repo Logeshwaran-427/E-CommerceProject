@@ -18,13 +18,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.project.AUTHSERVICE.DTO.ChangePasswordDTO;
+import com.project.AUTHSERVICE.DTO.CreateUserDTO;
 import com.project.AUTHSERVICE.DTO.LoginDTO;
 import com.project.AUTHSERVICE.DTO.RefreshTokenRequest;
+import com.project.AUTHSERVICE.DTO.SellerProfileDTO;
 import com.project.AUTHSERVICE.DTO.TokenResponse;
 import com.project.AUTHSERVICE.Entity.SellerProfile;
 import com.project.AUTHSERVICE.Entity.UserDet;
 import com.project.AUTHSERVICE.Service.UserServiceLogic;
 import com.project.AUTHSERVICE.UtilClasses.JwtUtility;
+
+import jakarta.validation.Valid;
 
 
 
@@ -73,13 +77,13 @@ public class UserDetController {
 // }
     
     @PostMapping("/createUser")
-    public ResponseEntity<String> postMethodName(@RequestBody UserDet user) {
+    public ResponseEntity<String> postMethodName(@RequestBody @Valid  CreateUserDTO user) {
         return userServiceLogic.createNewUser(user);
     }
 
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/applySeller")
-    public ResponseEntity<String> applySeller(@RequestBody SellerProfile sellerProfile) {  
+    public ResponseEntity<String> applySeller(@RequestBody @Valid SellerProfileDTO sellerProfile) {  
         return userServiceLogic.applyForSupplier(sellerProfile);
     }
 

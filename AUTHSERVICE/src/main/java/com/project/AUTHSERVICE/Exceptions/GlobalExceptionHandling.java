@@ -4,6 +4,7 @@ import org.apache.hc.core5.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -24,6 +25,18 @@ public class GlobalExceptionHandling {
         log.warn(ex.getMessage());
         ErrorResponseDTO errorMessage=new ErrorResponseDTO(ex.getMessage(), 400);
         return ResponseEntity.status(HttpStatus.SC_BAD_GATEWAY).body(errorMessage);
+    }
+
+    @ExceptionHandler (MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponseDTO> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex){
+        
+        String message = ex.getBindingResult()
+            .getFieldErrors()
+            .get(0)
+            .getDefaultMessage();
+            log.warn(message);
+        ErrorResponseDTO errorMessage=new ErrorResponseDTO(message, 400);
+        return  ResponseEntity.status(HttpStatus.SC_BAD_REQUEST).body(errorMessage);
     }
     
 }

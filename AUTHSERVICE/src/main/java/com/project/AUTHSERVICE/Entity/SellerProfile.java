@@ -10,6 +10,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 
 @Entity
 public class SellerProfile {
@@ -17,8 +19,12 @@ public class SellerProfile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
+    @NotBlank (message = "Business name is required")
     String businessName;
+    @NotBlank (message = "Business email is required")
+    @Email (message = "Enter valid email")
     String businessEmail;
+    @NotBlank (message = "GST no is required")
     String gst;
 
     @Enumerated (EnumType.STRING)
