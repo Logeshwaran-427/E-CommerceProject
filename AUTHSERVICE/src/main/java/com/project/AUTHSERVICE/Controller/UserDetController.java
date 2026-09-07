@@ -21,9 +21,10 @@ import com.project.AUTHSERVICE.DTO.ChangePasswordDTO;
 import com.project.AUTHSERVICE.DTO.CreateUserDTO;
 import com.project.AUTHSERVICE.DTO.LoginDTO;
 import com.project.AUTHSERVICE.DTO.RefreshTokenRequest;
+import com.project.AUTHSERVICE.DTO.SellerDetailsResponse;
 import com.project.AUTHSERVICE.DTO.SellerProfileDTO;
 import com.project.AUTHSERVICE.DTO.TokenResponse;
-import com.project.AUTHSERVICE.Entity.SellerProfile;
+import com.project.AUTHSERVICE.DTO.UserDetailsResponseDTO;
 import com.project.AUTHSERVICE.Entity.UserDet;
 import com.project.AUTHSERVICE.Service.UserServiceLogic;
 import com.project.AUTHSERVICE.UtilClasses.JwtUtility;
@@ -89,7 +90,7 @@ public class UserDetController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/getSeller")
-    public List<SellerProfile> getSeller() {
+    public List<SellerDetailsResponse> getSeller() {
         return userServiceLogic.sellerProfiles();
     }
 
@@ -107,7 +108,7 @@ public class UserDetController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/getUsers")
-    public List<UserDet> getUsers() {
+    public List<UserDetailsResponseDTO> getUsers() {
         return userServiceLogic.userDets();
     }
     

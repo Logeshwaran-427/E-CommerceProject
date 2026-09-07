@@ -1,5 +1,6 @@
 package com.project.AUTHSERVICE.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -15,8 +16,10 @@ import org.springframework.stereotype.Service;
 import com.project.AUTHSERVICE.DTO.ChangePasswordDTO;
 import com.project.AUTHSERVICE.DTO.CreateUserDTO;
 import com.project.AUTHSERVICE.DTO.RefreshTokenRequest;
+import com.project.AUTHSERVICE.DTO.SellerDetailsResponse;
 import com.project.AUTHSERVICE.DTO.SellerProfileDTO;
 import com.project.AUTHSERVICE.DTO.TokenResponse;
+import com.project.AUTHSERVICE.DTO.UserDetailsResponseDTO;
 import com.project.AUTHSERVICE.Entity.RefreshToken;
 import com.project.AUTHSERVICE.Entity.SellerProfile;
 import com.project.AUTHSERVICE.Entity.UserDet;
@@ -115,9 +118,24 @@ public class UserServiceLogic {
 
     //Get List of sellers
 
-    public List<SellerProfile> sellerProfiles(){
+    public List<SellerDetailsResponse> sellerProfiles(){
         log.info("Fetching all seller applications");
-        return sellerRepo.findAll();
+        List<SellerProfile> sellers=sellerRepo.findAll();
+        List<SellerDetailsResponse> sellerResponse=new ArrayList<>();
+
+        for(SellerProfile seller: sellers){
+            SellerDetailsResponse sellerDet=new SellerDetailsResponse();
+            sellerDet.setSellerId(seller.getId());
+            sellerDet.setBusinessEmail(seller.getBusinessEmail());
+            sellerDet.setBusinessName(seller.getBusinessName());
+            sellerDet.setGst(seller.getGst());
+            sellerDet.setStatus(seller.getStatus());
+            sellerDet.setUserid(seller.getUserDet().getId());
+            sellerDet.setUsername(seller.getUserDet().getUsername());
+            sellerResponse.add(sellerDet);
+
+        }
+        return sellerResponse;
     }
 
     // Pending seller requests can be approved by Admin
@@ -131,7 +149,7 @@ public class UserServiceLogic {
             return"Request already processed";
         }
 
-        if(seller!=null){
+        
             seller.setStatus(SellerStatus.APPROVED);
             UserDet user=seller.getUserDet();
             user.setRole(RoleEnum.PRODUCT_OWNER);
@@ -140,9 +158,7 @@ public class UserServiceLogic {
             log.info(seller.getUserDet().getUsername()+"'s request for seller is approved");
             log.info("Seller approved successfully. sellerId={}, username={}",seller.getId(),seller.getUserDet().getUsername());
             return "Your request has been approved!";
-        }
-
-        return "Seller not found";
+        
 
     }
 
@@ -151,30 +167,42 @@ public class UserServiceLogic {
     public String rejectPendingSeller(Long id){
         log.info("Admin processing seller rejection. sellerId={}", id);
         SellerProfile seller=sellerRepo.findById(id).orElseThrow(()->new ResourceNotFoundException("Seller not found with id"+id));
-        ;
+        
 
         if(seller.getStatus() != SellerStatus.PENDING){
             log.warn("Seller rejection skipped. sellerId={} already processed", id);
             return"Request already processed";
         }
 
-        if(seller!=null){
+        
             seller.setStatus(SellerStatus.REJECTED);
             sellerRepo.save(seller);
             log.info(seller.getUserDet().getUsername()+"'s request for seller is rejected");
             log.info("Seller rejected successfully. sellerId={}, username={}",seller.getId(),seller.getUserDet().getUsername());
             return "You did not met our conditions. So, You are rejected!";
-        }
-
-        return "Seller not found";
+        
 
     }
 
     //Get all users 
 
-    public List<UserDet> userDets(){
+    public List<UserDetailsResponseDTO> userDets(){
         log.info("Fetching all users");
-        return userDetRepo.findAll();
+        List<UserDetailsResponseDTO> users=new ArrayList<>();
+        List<UserDet> userDet=userDetRepo.findAll();
+        for(UserDet user:userDet){
+            UserDetailsResponseDTO user1=new UserDetailsResponseDTO();
+            user1.setId(user.getId());
+            user1.setUsername(user.getUsername());
+            user1.setEmail(user.getEmail());
+            user1.setPhoneNumber(user.getPhoneNumber());
+            user1.setCreatedDate(user.getCreatedDate());
+            user1.setUpdatedDate(user.getUpdatedDate());
+            user1.setIsActive(user.getIsActive());
+            user1.setRole(user.getRole());
+            users.add(user1);
+        }
+        return users;
     }
 
     //Delete user
