@@ -18,10 +18,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.project.PRODUCT.DTO.CategoryDTO;
 import com.project.PRODUCT.DTO.ProductDTO;
 import com.project.PRODUCT.DTO.ProductIdRequestDto;
+import com.project.PRODUCT.DTO.ProductPageResponse;
+import com.project.PRODUCT.DTO.ProductResponse;
 import com.project.PRODUCT.Entity.Categories;
 import com.project.PRODUCT.Entity.Product;
 import com.project.PRODUCT.ResponseDTO.ProductResponseDTO;
 import com.project.PRODUCT.Service.ProductService;
+
+import jakarta.validation.Valid;
 
 
 
@@ -39,19 +43,19 @@ public class ProductController {
 
     @PostMapping("/createProduct")
     @PreAuthorize("hasAnyRole('PRODUCT_OWNER','ADMIN')")
-    public String addProduct(@RequestBody ProductDTO product) {
+    public String addProduct(@RequestBody @Valid ProductDTO product) {
         return productService.addProduct(product);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/createCategory")
-    public String addCategory(@RequestBody Categories categories) {
+    public String addCategory(@RequestBody @Valid  CategoryDTO categories) {
         return productService.addCategory(categories);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/getProducts")
-    public Page getProducts(Pageable pageable) {
+    public ProductPageResponse getProducts(Pageable pageable) {
         return productService.getProducts(pageable);
     }
 
@@ -63,25 +67,25 @@ public class ProductController {
     
     @PreAuthorize("hasAnyRole('USER','PRODUCT_OWNER','ADMIN')")
     @GetMapping("/getProduct/{id}")
-    public Product getMethodName(@PathVariable Long id) {
+    public ProductResponse getMethodName(@PathVariable Long id) {
         return productService.getById(id);
     }
 
     @PreAuthorize("hasAnyRole('USER','PRODUCT_OWNER')")
     @GetMapping("/getProductByBrand/")
-    public Page<Product> productByBrand(@RequestParam String brand,Pageable pageable) {
+    public ProductPageResponse productByBrand(@RequestParam String brand,Pageable pageable) {
         return productService.getByBrand(brand,pageable);
     }
     
     @PreAuthorize("hasAnyRole('USER','PRODUCT_OWNER')")
     @GetMapping("getProductByCategory/{id}")
-    public Page<Product> productByCategory(@PathVariable Long id,Pageable pageable) {
+    public ProductPageResponse productByCategory(@PathVariable Long id,Pageable pageable) {
         return productService.getByCategory(id,pageable);
     }
     
     @PreAuthorize("hasRole('PRODUCT_OWNER')")
     @GetMapping("/getMyProducts")
-    public Page<Product> getMethodName(Pageable pageable) {
+    public ProductPageResponse getMethodName(Pageable pageable) {
         return productService.getMyProducts(pageable);
     }
 

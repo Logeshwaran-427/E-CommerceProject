@@ -32,5 +32,7 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
     boolean existsByNameAndDescriptionIgnoreCaseAndSellerIdAndIdNot(String name, String description, Long sellerId,Long id);
 
     List<Product> findByIdInAndStatusNot(List<Long> productIds,ProductStatus status);
+
+    boolean existsByNameIgnoreCaseAndSellerIdIsNull(String productName);
     
 }

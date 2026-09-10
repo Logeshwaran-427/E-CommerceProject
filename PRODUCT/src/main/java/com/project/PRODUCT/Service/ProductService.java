@@ -3,6 +3,7 @@ package com.project.PRODUCT.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -17,6 +18,7 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,6 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.project.PRODUCT.Client.ProductClient;
 import com.project.PRODUCT.DTO.CategoryDTO;
 import com.project.PRODUCT.DTO.ProductDTO;
+import com.project.PRODUCT.DTO.ProductPageResponse;
+import com.project.PRODUCT.DTO.ProductResponse;
+import com.project.PRODUCT.DTO.UserContext;
 import com.project.PRODUCT.Entity.Categories;
 import com.project.PRODUCT.Entity.Product;
 import com.project.PRODUCT.Enums.ProductStatus;
@@ -63,9 +68,25 @@ public class ProductService {
     //List all products applicable for ADMIN
 
     @Cacheable(value = "AllProducts")
-    public Page getProducts(Pageable pageable){
+    public ProductPageResponse getProducts(Pageable pageable){
         log.info("Admin requested product list. Page={}", pageable.getPageNumber());
-        return productRepository.findAll(pageable);
+
+        Page<Product> products=productRepository.findAll(pageable);
+        List<ProductResponse> productDetails=new ArrayList<>();
+
+        for(Product product:products){
+            ProductResponse productResponse=new ProductResponse();
+            productResponse.setId(product.getId());
+            productResponse.setName(product.getName());
+            productResponse.setDescription(product.getDescription());
+            productResponse.setBrand(product.getBrand());
+            productResponse.setPrice(product.getPrice());
+            productResponse.setCategory(product.getCategory().getName());
+            productResponse.setStatus(product.getStatus());
+            productDetails.add(productResponse);
+        }
+
+        return new ProductPageResponse(productDetails,products.getNumber(),products.getTotalPages(),products.getTotalElements());
     }
 
 
@@ -73,17 +94,17 @@ public class ProductService {
 
     @Transactional
     @Caching(evict = {@CacheEvict(value = "AllCategory",allEntries = true)})
-    public String addCategory(Categories categories){
+    public String addCategory(CategoryDTO categories){
         log.info("Request received to create category '{}'", categories.getName());
-        if(categories.getName()==null || categories.getDescription()==null){
-            throw new BadRequestException("Fill all the required fields");
-        }
 
         if(categoryRepository.existsByNameIgnoreCase(categories.getName())){
             throw new BadRequestException("Category already present");
         }
+        Categories category=new Categories();
+        category.setName(categories.getName());
+        category.setDescription(categories.getDescription());
         log.info("Category '{}' created successfully", categories.getName());
-        categoryRepository.save(categories);
+        categoryRepository.save(category);
         return "Category added";
 
     }
@@ -111,19 +132,31 @@ public class ProductService {
     public String addProduct(ProductDTO product){
 
         Authentication authentication=SecurityContextHolder.getContext().getAuthentication();
-        Long sellerId=(Long)authentication.getDetails();
-        log.info("Seller {} is creating product '{}'", sellerId, product.getName());
-        if(product.getName()==null || product.getDescription()==null || 
-        product.getPrice()==null || product.getBrand() ==null ){
-            throw new BadRequestException("You must fill all the required fields");
-        }
+        UserContext userContext=(UserContext)authentication.getDetails();
+        String role=userContext.getRole();
+        Long sellerId=null;
+        Long userId=userContext.getUserId();
 
-        if(productRepository.existsByNameIgnoreCaseAndSellerId(product.getName(), sellerId)){
+        if(role.equals("PRODUCT_OWNER")){
+            sellerId=userContext.getSellerId();
+            if(sellerId==null){
+            throw new AuthorizationException("SellerId not found");
+            }
+        }
+        
+        log.info("User {} with role {} is creating product '{}'",userId,role,product.getName());
+        if(sellerId!=null){
+            if(productRepository.existsByNameIgnoreCaseAndSellerId(product.getName(), sellerId)){
             throw new BadRequestException("Product already exists");
+            }
+        }
+        else{
+            if(productRepository.existsByNameIgnoreCaseAndSellerIdIsNull(product.getName())){
+                throw new BadRequestException("Product already exists");
+            }
         }
 
         Categories category=categoryRepository.findById(product.getCategoryId()).orElseThrow(()->new ResourceNotFoundException("Invalid category ID"));
-
 
         Product product1=new Product();
         product1.setName(product.getName());
@@ -131,23 +164,14 @@ public class ProductService {
         product1.setBrand(product.getBrand());
         product1.setPrice(product.getPrice());
         product1.setCategory(category);
-        // product1.setStockQuantity(product.getStockQuantity());
         product1.setSellerId(sellerId);
-        // if(product.getStockQuantity()>0){
-        //     product1.setStatus(ProductStatus.ACTIVE);
-        // }
-        // else if(product.getStockQuantity()<0){
-        //     throw new BadRequestException("Stock quantity cannot be negative");
-        // }
-        // else{
-        // product1.setStatus(ProductStatus.OUT_OF_STOCK);
-        // }
+        product1.setCreatedBy(userId);
         product1.setStatus(ProductStatus.ACTIVE);
         String generateSku=product.getBrand()+"-"+product.getName()+"-"+UUID.randomUUID().toString().substring(0, 4);
         product1.setSku(generateSku);
         
         productRepository.save(product1);
-        log.info("Product {} created successfully with id={}", product1.getName(), product1.getId());
+            log.info("Product {} created successfully with id={} by user={}",product1.getName(),product1.getId(),userId);
         return "Product added successfully";
 
     }
@@ -156,40 +180,97 @@ public class ProductService {
     //get product by id
 
     @Cacheable(value = "productById",key = "#id")
-    public Product getById(Long id){
+    public ProductResponse getById(Long id){
         log.info("Fetching product {}", id);
+        
+        Product product1=productRepository.findByIdAndStatusNot(id, ProductStatus.INACTIVE).orElseThrow(()->new ResourceNotFoundException("Invalid ID. Please provide the appropraie id"));
+        ProductResponse productResponse=new ProductResponse();
+        productResponse.setId(product1.getId());
+        productResponse.setName(product1.getName());
+        productResponse.setDescription(product1.getDescription());
+        productResponse.setBrand(product1.getBrand());
+        productResponse.setPrice(product1.getPrice());
+        productResponse.setCategory(product1.getCategory().getName());
+        productResponse.setStatus(product1.getStatus());
         log.info("Product {} fetched successfully", id);
-        return productRepository.findByIdAndStatusNot(id, ProductStatus.INACTIVE).orElseThrow(()->new ResourceNotFoundException("Invalid ID. Please provide the appropraie id"));
-    }
+        return productResponse;
+        
+        }
     
     //get product by brand
     @Cacheable(value = "productByBrand")
-    public Page<Product> getByBrand(String name,Pageable pageable){
-        System.out.println("DB hit");
+    public ProductPageResponse getByBrand(String name,Pageable pageable){
         log.info("Searching products by brand '{}'", name);
-        return productRepository.findAllByBrandContainingIgnoreCaseAndStatusNot(name, ProductStatus.INACTIVE,pageable);
+        Page<Product> products=productRepository.findAllByBrandContainingIgnoreCaseAndStatusNot(name, ProductStatus.INACTIVE,pageable);
+        List<ProductResponse> productDetails=new ArrayList<>();
+
+        for(Product product:products){
+            ProductResponse productResponse=new ProductResponse();
+            productResponse.setId(product.getId());
+            productResponse.setName(product.getName());
+            productResponse.setDescription(product.getDescription());
+            productResponse.setBrand(product.getBrand());
+            productResponse.setPrice(product.getPrice());
+            productResponse.setCategory(product.getCategory().getName());
+            productResponse.setStatus(product.getStatus());
+            productDetails.add(productResponse);
+        }
+
+        return new ProductPageResponse(productDetails,products.getNumber(),products.getTotalPages(),products.getTotalElements());
     }
 
 
     //get product by category
 
     @Cacheable(value = "productByCategory")
-    public Page<Product> getByCategory(Long id,Pageable pageable){
+    public ProductPageResponse getByCategory(Long id,Pageable pageable){
         log.info("Fetching products for category {}", id);
         Categories category=categoryRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("No category found"));
         Page<Product> products=productRepository.findAllByCategoryAndStatusNot(category,ProductStatus.INACTIVE,pageable);
-        return products;
+        List<ProductResponse> productDetails=new ArrayList<>();
+
+        for(Product product:products){
+            ProductResponse productResponse=new ProductResponse();
+            productResponse.setId(product.getId());
+            productResponse.setName(product.getName());
+            productResponse.setDescription(product.getDescription());
+            productResponse.setBrand(product.getBrand());
+            productResponse.setPrice(product.getPrice());
+            productResponse.setCategory(product.getCategory().getName());
+            productResponse.setStatus(product.getStatus());
+            productDetails.add(productResponse);
+        }
+
+        return new ProductPageResponse(productDetails,products.getNumber(),products.getTotalPages(),products.getTotalElements());
+  
     }
 
 
     //Seller views his product
 
-    public Page<Product> getMyProducts(Pageable pageable){
+    public ProductPageResponse getMyProducts(Pageable pageable){
         
         Authentication auth=SecurityContextHolder.getContext().getAuthentication();
         Long sellerId=(Long) auth.getDetails();
         log.info("Seller {} requested own products", sellerId);
-        return productRepository.findAllBySellerId(sellerId,pageable);
+
+        Page<Product> products=productRepository.findAllBySellerId(sellerId, pageable);
+        List<ProductResponse> productDetails=new ArrayList<>();
+
+        for(Product product:products){
+            ProductResponse productResponse=new ProductResponse();
+            productResponse.setId(product.getId());
+            productResponse.setName(product.getName());
+            productResponse.setDescription(product.getDescription());
+            productResponse.setBrand(product.getBrand());
+            productResponse.setPrice(product.getPrice());
+            productResponse.setCategory(product.getCategory().getName());
+            productResponse.setStatus(product.getStatus());
+            productDetails.add(productResponse);
+        }
+
+        return new ProductPageResponse(productDetails,products.getNumber(),products.getTotalPages(),products.getTotalElements());
+  
     }
 
 
@@ -207,7 +288,8 @@ public class ProductService {
         Product product=productRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Product not found"));
 
         Authentication auth=SecurityContextHolder.getContext().getAuthentication();
-        Long sellerId=(Long) auth.getDetails();
+        UserContext userContext=(UserContext) auth.getDetails();
+        Long sellerId=userContext.getSellerId();
         log.info("Seller {} updating product {}", sellerId, id);
         if(!product.getSellerId().equals(sellerId)){
             throw new AuthorizationException("You are not the owner for this product");
@@ -222,22 +304,10 @@ public class ProductService {
         product.setDescription(productDTO.getDescription());
         product.setBrand(productDTO.getBrand());
         product.setPrice(productDTO.getPrice());
-        // product.setStockQuantity(productDTO.getStockQuantity());
         Categories category = categoryRepository
         .findById(productDTO.getCategoryId())
         .orElseThrow(()-> new ResourceNotFoundException("Category ID not found"));
         product.setCategory(category);
-        // if(product.getStockQuantity() > 0){
-        //     product.setStatus(ProductStatus.ACTIVE);
-        // }
-        // else{
-        //     product.setStatus(ProductStatus.OUT_OF_STOCK);
-        // }
-
-        // if(productRepository.existsByNameAndDescriptionIgnoreCaseAndSellerIdAndIdNot(product.getName(),product.getDescription(), sellerId,product.getId())){
-        //     throw new DuplicateException("Product already exists");
-        // }
-
         product.setStatus(ProductStatus.ACTIVE);
         productRepository.save(product);
         log.info("Product {} updated successfully by seller {}", id, sellerId);
@@ -260,7 +330,8 @@ public class ProductService {
 
         Product product=productRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Product Not found"));
         Authentication auth=SecurityContextHolder.getContext().getAuthentication();
-        Long sellerId=(Long) auth.getDetails();
+        UserContext userContext=(UserContext) auth.getDetails();
+        Long sellerId=userContext.getSellerId();
         log.info("Seller {} requested deletion of product {}", sellerId, id);
         String token=request.getHeader("Authorization");
         String corrId=request.getHeader("X-Correlation-ID");
@@ -327,12 +398,6 @@ public class ProductService {
         .findById(productDTO.getCategoryId())
         .orElseThrow(()-> new ResourceNotFoundException("Category ID not found"));
         product.setCategory(category);
-        // if(product.getStockQuantity() > 0){
-        //     product.setStatus(ProductStatus.ACTIVE);
-        // }
-        // else{
-        //     product.setStatus(ProductStatus.OUT_OF_STOCK);
-        // }
         product.setStatus(ProductStatus.ACTIVE);
         productRepository.save(product);
         log.info("Product {} updated successfully by admin", id);

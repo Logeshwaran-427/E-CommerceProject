@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.project.PRODUCT.DTO.UserContext;
 import com.project.PRODUCT.ExceptionHandling.AuthorizationException;
 import com.project.PRODUCT.UtilityClasses.JwtUtility;
 
@@ -54,11 +55,15 @@ public class JwtFilterValidation extends OncePerRequestFilter {
                     if(!jwtUtility.isValidToken(token)){
                         
                         String role=jwtUtility.extractRole(token);
+                        UserContext userContext=new UserContext();
+                        userContext.setRole(role);
+                        userContext.setSellerId(jwtUtility.extractSellerId(token));
+                        userContext.setUserId(jwtUtility.extractUserId(token));
                         List<SimpleGrantedAuthority> authority=new ArrayList<>();
                         authority.add(new SimpleGrantedAuthority("ROLE_"+role));
                         UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken=new UsernamePasswordAuthenticationToken( name,null,authority);
-                        Long sellerId=jwtUtility.extractSellerId(token);
-                        usernamePasswordAuthenticationToken.setDetails(sellerId);
+                        
+                        usernamePasswordAuthenticationToken.setDetails(userContext);
                         SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
                         
                     }

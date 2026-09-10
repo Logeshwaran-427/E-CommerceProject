@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import com.project.PRODUCT.Enums.ProductStatus;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -18,6 +19,10 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(
@@ -32,15 +37,22 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
+    @NotBlank(message = "Product name is required")
     String name;
+    @NotBlank(message = "Description is required")
+    @Size(min=6, message = "Minimum six characters is required")
     String description;
+    @NotNull(message = "Price field is required")
+    @Positive(message = "Price must be greater than zero")
     Double price;
-    // Integer stockQuantity;
     Long sellerId;
     @Enumerated(EnumType.STRING)
     ProductStatus status;
+    @Column(unique = true, nullable = false)
     String sku;
+    @NotBlank(message = "Brand field is required")
     String brand;
+    Long createdBy;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
     @ManyToOne
@@ -55,11 +67,10 @@ public class Product {
 
     public Product(String name, String description, Double price,  Long sellerId,
             ProductStatus status, String sku, String brand, LocalDateTime createdAt, LocalDateTime updatedAt,
-            Categories category) {
+            Categories category,Long createdBy) {
         this.name = name;
         this.description = description;
         this.price = price;
-        // this.stockQuantity = stockQuantity;
         this.sellerId = sellerId;
         this.status = status;
         this.sku = sku;
@@ -67,6 +78,7 @@ public class Product {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.category = category;
+        this.createdBy=createdBy;
     }
 
     @PrePersist
@@ -105,12 +117,6 @@ public class Product {
     public void setPrice(Double price) {
         this.price = price;
     }
-    // public Integer getStockQuantity() {
-    //     return stockQuantity;
-    // }
-    // public void setStockQuantity(Integer stockQuantity) {
-    //     this.stockQuantity = stockQuantity;
-    // }
     public Long getSellerId() {
         return sellerId;
     }
@@ -159,4 +165,10 @@ public class Product {
 	public void setVersion(Long version) {
 		this.version = version;
 	}
+        public Long getCreatedBy() {
+        return createdBy;
+    }
+    public void setCreatedBy(Long createdBy) {
+        this.createdBy = createdBy;
+    }
 }

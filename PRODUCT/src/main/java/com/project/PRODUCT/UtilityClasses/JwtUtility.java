@@ -36,5 +36,10 @@ public class JwtUtility {
         return extractBody(token).get("seller_id",Long.class);
     }
 
+    public Long extractUserId(String token){
+        return extractBody(token).get("user_id",Long.class);
+    }
+
+
     
 }
