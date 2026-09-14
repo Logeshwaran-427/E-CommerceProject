@@ -34,5 +34,7 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
     List<Product> findByIdInAndStatusNot(List<Long> productIds,ProductStatus status);
 
     boolean existsByNameIgnoreCaseAndSellerIdIsNull(String productName);
+
+    List<Product> findAllBySellerId(Long sellerId);
     
 }

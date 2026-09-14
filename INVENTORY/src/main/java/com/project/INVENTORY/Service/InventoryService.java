@@ -177,7 +177,7 @@ public class InventoryService {
         return inventoryRepo.findAll();
     }
 
-    public List<Inventory> getMyInventory(int page){
+    public List<Inventory> getMyInventory(){
         Authentication auth=SecurityContextHolder.getContext().getAuthentication();
         UserContext userContext=(UserContext) auth.getDetails();
         Long sellerId=userContext.getSellerId();
@@ -185,7 +185,11 @@ public class InventoryService {
         String corrId=request.getHeader("X-Correlation-ID");
         logger.info("Fetching inventory for sellerId={}", sellerId);
 
-        List<ProductClient> products=inventoryClient.currentSellerProducts(token,page,corrId);
+        List<ProductClient> products=inventoryClient.curSellerProducts(token,corrId);
+
+        if(products.isEmpty()){
+            throw new BadRequestException("Products not found");
+        }
         
         List<Long> productIds=new ArrayList<>();
         for(ProductClient productId:products){

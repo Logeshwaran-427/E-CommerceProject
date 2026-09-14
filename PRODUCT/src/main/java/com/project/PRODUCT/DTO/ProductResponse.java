@@ -9,12 +9,13 @@ public class ProductResponse {
             Double price;
             String brand;
             String category;
+            Long sellerId;
             ProductStatus status;
 
 
 
             public ProductResponse(Long id, String name, String description, Double price, String brand,
-                    String category,ProductStatus status) {
+                    String category,ProductStatus status,Long sellerId) {
                 this.id = id;
                 this.name = name;
                 this.description = description;
@@ -22,6 +23,7 @@ public class ProductResponse {
                 this.brand = brand;
                 this.category = category;
                 this.status=status;
+                this.sellerId=sellerId;
             }
 
             public ProductResponse() {
@@ -71,7 +73,13 @@ public class ProductResponse {
             public void setStatus(ProductStatus status) {
                 this.status = status;
             }
+            public Long getSellerId() {
+                return sellerId;
+            }
 
+            public void setSellerId(Long sellerId) {
+                this.sellerId = sellerId;
+            }
      
 
 }

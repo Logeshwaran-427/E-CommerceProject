@@ -1,7 +1,11 @@
 package com.project.INVENTORY.DTO;
 
+import jakarta.validation.constraints.Positive;
+
 public class InventoryRequestDTO {
+    @Positive (message = "Enter the product id and it should be positive")
     Long productId;
+    @Positive (message = "Quantity should be positive")
     Integer stock;
 
     public InventoryRequestDTO(Long productId, Integer stock) {

@@ -132,6 +132,7 @@ public class ProductController {
     }  
     
     
+    
     @PreAuthorize("hasRole('PRODUCT_OWNER')")
     @PutMapping("seller/updateMyProduct/{id}")
     public String putMethodName(@PathVariable Long id, @RequestBody ProductDTO productDTO) {
@@ -143,6 +144,14 @@ public class ProductController {
     public List<ProductResponseDTO> getByProductIds(@RequestBody ProductIdRequestDto productIds) {
         return productService.checkProductIds(productIds.getProductIds());
     }
+
+     @PreAuthorize("hasRole('PRODUCT_OWNER')")
+    @GetMapping("seller/inventory/getProducts")
+    public List<ProductResponse> getSellerInventoryProducts(){
+        return productService.getProductsForInventorySeller();
+    }
+
+    
     
     
     

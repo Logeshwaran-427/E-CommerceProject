@@ -16,6 +16,8 @@ import com.project.INVENTORY.DTO.InventoryRequestDTO;
 import com.project.INVENTORY.Entity.Inventory;
 import com.project.INVENTORY.Service.InventoryService;
 
+import jakarta.validation.Valid;
+
 
 @RestController
 @RequestMapping("/inventory")
@@ -29,7 +31,7 @@ public class InventoryController {
     
     @PreAuthorize("hasAnyRole('ADMIN','PRODUCT_OWNER')")
     @PostMapping("/createInventory")
-    public String createInventory(@RequestBody InventoryRequestDTO inventoryRequestDTO) { 
+    public String createInventory(@RequestBody @Valid InventoryRequestDTO inventoryRequestDTO) { 
         return inventoryService.createInventory(inventoryRequestDTO);
     }
 
@@ -47,8 +49,8 @@ public class InventoryController {
 
     @PreAuthorize("hasRole('PRODUCT_OWNER')")
     @GetMapping("/seller/getInventory")
-    public List<Inventory> getInventory(@RequestParam int page){
-        return inventoryService.getMyInventory(page);
+    public List<Inventory> getInventory(){
+        return inventoryService.getMyInventory();
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','PRODUCT_OWNER')")

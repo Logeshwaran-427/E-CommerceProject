@@ -191,6 +191,7 @@ public class ProductService {
         productResponse.setBrand(product1.getBrand());
         productResponse.setPrice(product1.getPrice());
         productResponse.setCategory(product1.getCategory().getName());
+        productResponse.setSellerId(product1.getSellerId());
         productResponse.setStatus(product1.getStatus());
         log.info("Product {} fetched successfully", id);
         return productResponse;
@@ -213,6 +214,7 @@ public class ProductService {
             productResponse.setPrice(product.getPrice());
             productResponse.setCategory(product.getCategory().getName());
             productResponse.setStatus(product.getStatus());
+            productResponse.setSellerId(product.getSellerId());
             productDetails.add(productResponse);
         }
 
@@ -238,6 +240,7 @@ public class ProductService {
             productResponse.setPrice(product.getPrice());
             productResponse.setCategory(product.getCategory().getName());
             productResponse.setStatus(product.getStatus());
+            productResponse.setSellerId(product.getSellerId());
             productDetails.add(productResponse);
         }
 
@@ -251,7 +254,10 @@ public class ProductService {
     public ProductPageResponse getMyProducts(Pageable pageable){
         
         Authentication auth=SecurityContextHolder.getContext().getAuthentication();
-        Long sellerId=(Long) auth.getDetails();
+        UserContext userContext=(UserContext)auth.getDetails();
+        Long sellerId=userContext.getSellerId();
+
+        
         log.info("Seller {} requested own products", sellerId);
 
         Page<Product> products=productRepository.findAllBySellerId(sellerId, pageable);
@@ -266,6 +272,7 @@ public class ProductService {
             productResponse.setPrice(product.getPrice());
             productResponse.setCategory(product.getCategory().getName());
             productResponse.setStatus(product.getStatus());
+            productResponse.setSellerId(product.getSellerId());
             productDetails.add(productResponse);
         }
 
@@ -440,7 +447,8 @@ public class ProductService {
     public Product getSellerProductsById(Long id){
         Product product=productRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Product Not found"));
         Authentication auth=SecurityContextHolder.getContext().getAuthentication();
-        Long sellerId=(Long) auth.getDetails();
+        UserContext userContext=(UserContext)auth.getDetails();
+        Long sellerId=userContext.getSellerId();
         log.info("Seller {} requested product {}", sellerId, id);
         if(!product.getSellerId().equals(sellerId)){
             throw new AuthorizationException("You are not the owner for this product");
@@ -477,6 +485,31 @@ public class ProductService {
 
         return productResponseDTOs;
 
+    }
+
+    public List<ProductResponse> getProductsForInventorySeller(){
+        Authentication auth=SecurityContextHolder.getContext().getAuthentication();
+        UserContext userContext=(UserContext) auth.getDetails();
+        Long sellerId=userContext.getSellerId();
+
+        List<Product> sellerProducts=productRepository.findAllBySellerId(sellerId);
+        List<ProductResponse> products=new ArrayList<>();
+
+        for(Product product:sellerProducts){
+
+            ProductResponse productResponse=new ProductResponse();
+            productResponse.setId(product.getId());
+            productResponse.setName(product.getName());
+            productResponse.setDescription(product.getDescription());
+            productResponse.setBrand(product.getBrand());
+            productResponse.setPrice(product.getPrice());
+            productResponse.setCategory(product.getCategory().getName());
+            productResponse.setStatus(product.getStatus());
+            productResponse.setSellerId(product.getSellerId());
+            products.add(productResponse);
+            
+        }
+        return products;
     }
     
     

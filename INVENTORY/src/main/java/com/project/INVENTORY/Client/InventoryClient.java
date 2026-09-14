@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.project.INVENTORY.DTO.ProductClient;
-import com.project.INVENTORY.DTO.ProductPageResponseDTO;
 import com.project.INVENTORY.ExceptionHandling.ResourceNotFoundException;
 
 @Component
@@ -34,12 +33,10 @@ public class InventoryClient {
 
     }
 
-    public List<ProductClient> currentSellerProducts(String token,int page, String correlationId){
-        ProductPageResponseDTO productResonse=webClient.get().uri(PRODUCTURL + "/getMyProducts",uriBuilder->uriBuilder.queryParam("page",page).build()).
-                                        header("Authorization", token).header("X-Correlation-ID", correlationId).
-                                        retrieve().bodyToMono(ProductPageResponseDTO.class).block();
-        List<ProductClient> products=productResonse.getContent();
-        return products;
+    public List<ProductClient> curSellerProducts(String token,String correlationId){
+      List<ProductClient> productClients=webClient.get().uri(PRODUCTURL+"/seller/inventory/getProducts").header("Authorization", token).header("X-Correlation-ID", correlationId).
+                                        retrieve().bodyToFlux(ProductClient.class).collectList().block();
+        return  productClients;
     }
 
 

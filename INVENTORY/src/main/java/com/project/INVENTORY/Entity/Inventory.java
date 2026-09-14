@@ -13,6 +13,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Version;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 
 @Entity
@@ -21,11 +24,10 @@ public class Inventory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    @Positive (message = "Enter the product id and it should be positive")
     private Long productId;
-
+    @Positive (message = "Quantity should be positive")
     private Integer availableQuantity;
-
     private Integer reservedQuantity;
 
     @Enumerated(EnumType.STRING)
