@@ -8,6 +8,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 @Entity
 public class CartItems {
@@ -15,7 +18,9 @@ public class CartItems {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
+    @NotNull (message = "Product Id field is required")
     Long productId; 
+    @Positive (message = "Field should be positive")
     Integer quantity;
     Double price;
     @JsonManagedReference

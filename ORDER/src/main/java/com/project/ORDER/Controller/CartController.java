@@ -7,13 +7,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.project.ORDER.DTO.CartDTO;
 import com.project.ORDER.Entities.Cart;
 import com.project.ORDER.Entities.CartItems;
 import com.project.ORDER.Service.OrderService;
+
+import jakarta.validation.Valid;
 
 
 
@@ -27,9 +31,9 @@ public class CartController {
         this.orderService = orderService;
     }
 
-    @PostMapping("/addTocart/{productId}")
-    public String addCart(@PathVariable Long productId,@RequestParam Integer quantity) {
-        return orderService.addToCart(productId, quantity);
+    @PostMapping("/addTocart")
+    public String addCart(@RequestBody @Valid  CartDTO cartDTO) {
+        return orderService.addToCart(cartDTO);
     }
     
     @GetMapping("/getMycart")
@@ -37,9 +41,9 @@ public class CartController {
         return orderService.getMycart();
     }
 
-    @PatchMapping("/updateQuantity/{productId}")
-    public String updateQuantity(@PathVariable Long productId,@RequestParam Integer quantiyy){
-        return orderService.updateQuantity(productId,quantiyy);
+    @PatchMapping("/updateQuantity")
+    public String updateQuantity(@RequestBody CartDTO cartDTO){
+        return orderService.updateQuantity(cartDTO);
     }
 
     @DeleteMapping("/deleteCart")

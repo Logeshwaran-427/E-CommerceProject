@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.project.ORDER.DTO.AddressDTO;
 import com.project.ORDER.DTO.CheckoutCartRequest;
 import com.project.ORDER.DTO.PlaceDirectOrderRequest;
 import com.project.ORDER.DTO.PlaceOrderRequestDTO;
@@ -21,6 +22,8 @@ import com.project.ORDER.Enums.OrderItemStatus;
 import com.project.ORDER.ResponseDTO.SellerDashboardDTO;
 import com.project.ORDER.ResponseDTO.SellerOrderResponse;
 import com.project.ORDER.Service.OrderService;
+
+import jakarta.validation.Valid;
 
 
 @RestController
@@ -79,7 +82,7 @@ public class OrderController {
 
     @PreAuthorize("hasAnyRole('ADMIN','USER','PRODUCT_OWNER')")
     @PostMapping("/address")
-    public String addAddress(@RequestBody Address address) {  
+    public String addAddress(@RequestBody @Valid  AddressDTO address) {  
         return orderService.addAddress(address);
     }
 

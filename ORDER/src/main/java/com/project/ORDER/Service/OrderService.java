@@ -14,6 +14,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.project.ORDER.DTO.AddressDTO;
+import com.project.ORDER.DTO.CartDTO;
 import com.project.ORDER.DTO.CheckoutCartRequest;
 import com.project.ORDER.DTO.InventoryRequestDTO;
 import com.project.ORDER.DTO.OrderItemStatusNotification;
@@ -46,6 +48,7 @@ import com.project.ORDER.Repository.CartItemRepo;
 import com.project.ORDER.Repository.CartRepository;
 import com.project.ORDER.Repository.OrderItemRepo;
 import com.project.ORDER.Repository.OrderRepo;
+import com.project.ORDER.ResponseDTO.CartResponseDTO;
 import com.project.ORDER.ResponseDTO.SellerDashboardDTO;
 import com.project.ORDER.ResponseDTO.SellerOrderResponse;
 
@@ -85,32 +88,31 @@ public class OrderService {
     Logger logger=LoggerFactory.getLogger(OrderService.class);
 
 
-    public String addAddress(Address address){
+    public String addAddress(AddressDTO addressDto){
         Authentication auth=SecurityContextHolder.getContext().getAuthentication();
         UserContext userContext=(UserContext) auth.getDetails();
         Long userId=userContext.getUserId();
         logger.info("Adding address for userId={}", userId);
-        if(address.getFullName()==null || address.getAddress()==null || address.getAddressType()==null || address.getPostalCode()==null || address.getPhoneNumber()==null){
-            throw new BadRequestException("Please fill all the fields");
-        }
+
+        Address address=new Address();
+        address.setFullName(addressDto.getFullName());
+        address.setAddress(addressDto.getAddress());
+        address.setCity(addressDto.getCity());
+        address.setPhoneNumber(addressDto.getPhoneNumber());
+        address.setAddressType(addressDto.getAddressType());
+        address.setPostalCode(addressDto.getPostalCode());
         address.setUserId(userId);
         addressRepo.save(address);
+
         logger.info("Address saved successfully for userId={}", userId);
         return "Address saved successfully";
     }
 
 
     @Transactional
-    public String addToCart(Long productId,Integer quantity){
+    public String addToCart(CartDTO cartDTO){
 
-        if(productId==null || quantity==null){
-            throw new BadRequestException("Please complete the required field");
-        }
-
-        if(quantity<=0){
-            throw new BadRequestException("Qunatity should be positive");
-        }
-        if(quantity>100){
+        if(cartDTO.getQuantity()>100){
             throw new BadRequestException("Add quantity less than 100");
         }
 
@@ -119,9 +121,9 @@ public class OrderService {
         Long userId=userContext.getUserId();
         String token=request.getHeader("Authorization");
         String corrId=request.getHeader("X-Correlation-ID");
-        logger.info("User {} adding product {} to cart", userId, productId);
+        logger.info("User {} adding product {} to cart", userId, cartDTO.getProductId());
 
-        ProductResponseDTO product=productClient.getProduct(productId, token,corrId);
+        ProductResponseDTO product=productClient.getProduct(cartDTO.getProductId(), token,corrId);
 
         if(product.getStatus()!=ProductStatus.ACTIVE){
             throw new BadRequestException("Product is inactive");
@@ -132,18 +134,18 @@ public class OrderService {
                                                                 return cartRepo.save(cart1);
                                                                 });
         
-        Optional<CartItems> cartItem=cartItemRepo.findByCartAndProductId(cart,productId);
+        Optional<CartItems> cartItem=cartItemRepo.findByCartAndProductId(cart,cartDTO.getProductId());
         if(cartItem.isPresent()){
             CartItems cartItem1=cartItem.get();
             Integer oldQuantity=cartItem1.getQuantity();
-            Integer newQuantity=quantity+oldQuantity;
+            Integer newQuantity=cartDTO.getQuantity()+oldQuantity;
             if(newQuantity>100){
                 throw new BadRequestException("Add quantity less than 100. Beacause you already having "+oldQuantity+" for this product in cart");
             }
-            cartItem1.setQuantity(oldQuantity+quantity);
+            cartItem1.setQuantity(oldQuantity+cartDTO.getQuantity());
             cartItem1.setPrice(product.getPrice());
             cartItemRepo.save(cartItem1);
-            logger.info("Updated quantity of product {} in cart", productId);
+            logger.info("Updated quantity of product {} in cart", cartDTO.getProductId());
             return "Cart item added";
         }
         
@@ -151,10 +153,10 @@ public class OrderService {
         CartItems cartItems=new CartItems();
         cartItems.setCart(cart);
         cartItems.setProductId(product.getId());
-        cartItems.setQuantity(quantity);
+        cartItems.setQuantity(cartDTO.getQuantity());
         cartItems.setPrice(product.getPrice());
         cartItemRepo.save(cartItems);
-        logger.info("Product {} added to cart", productId);
+        logger.info("Product {} added to cart", cartDTO.getProductId());
         return "Product added to cart successfully";
 
     }
@@ -169,18 +171,22 @@ public class OrderService {
         return cart;
     }
 
-    public String updateQuantity(Long productId,Integer quantity){
+    public String updateQuantity(CartDTO cartDTO){
+
+        if(cartDTO.getQuantity()>100){
+            throw new BadRequestException("Add quantity less than 100");
+        }
 
         Authentication auth=SecurityContextHolder.getContext().getAuthentication();
         UserContext userContext=(UserContext) auth.getDetails();
         Long userId=userContext.getUserId();
-        logger.info("Updating cart quantity for product {}", productId);
+        logger.info("Updating cart quantity for product {}", cartDTO.getProductId());
         Cart cart=cartRepo.findByUserId(userId).orElseThrow(()-> new ResourceNotFoundException("Cart not found for the user"));
 
         List<CartItems> cartItems=cart.getCartItems();
         CartItems cartItems2=null;
         for(CartItems items:cartItems){
-            if(items.getProductId().equals(productId)){
+            if(items.getProductId().equals(cartDTO.getProductId())){
                 cartItems2=items;
             }
         }
@@ -188,9 +194,11 @@ public class OrderService {
         if(cartItems2==null){
             throw new ResourceNotFoundException("Product not found in the cart");
         }
-        cartItems2.setQuantity(quantity);
+
+
+        cartItems2.setQuantity(cartDTO.getQuantity());
         cartItemRepo.save(cartItems2);
-        logger.info("Quantity updated successfully for product {}", productId);
+        logger.info("Quantity updated successfully for product {}", cartDTO.getProductId());
         return "Quantity updated successfully";
     }
 
@@ -237,7 +245,14 @@ public class OrderService {
         UserContext userContext=(UserContext) auth.getDetails();
         Long userId=userContext.getUserId();
         Cart cart=cartRepo.findByUserId(userId).orElseThrow(()-> new ResourceNotFoundException("Cart not found for the user"));
-        return cartItemRepo.findAllByCart(cart);        
+
+        List<CartItems> items=cart.getCartItems();
+        
+        for(CartItems item:items){
+            CartResponseDTO cartItems=new CartResponseDTO();
+        }
+
+        return items;        
     }
 
     @Transactional
