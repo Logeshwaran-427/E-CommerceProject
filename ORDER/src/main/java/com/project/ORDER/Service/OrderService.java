@@ -6,8 +6,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -49,6 +51,7 @@ import com.project.ORDER.Repository.CartRepository;
 import com.project.ORDER.Repository.OrderItemRepo;
 import com.project.ORDER.Repository.OrderRepo;
 import com.project.ORDER.ResponseDTO.CartResponseDTO;
+import com.project.ORDER.ResponseDTO.PageCartResponse;
 import com.project.ORDER.ResponseDTO.SellerDashboardDTO;
 import com.project.ORDER.ResponseDTO.SellerOrderResponse;
 
@@ -240,19 +243,24 @@ public class OrderService {
         return "Cart deleted successfully";
     }
 
-    public List<CartItems> myCartItems(){
+    public PageCartResponse myCartItems(Pageable pageable){
         Authentication auth=SecurityContextHolder.getContext().getAuthentication();
         UserContext userContext=(UserContext) auth.getDetails();
         Long userId=userContext.getUserId();
         Cart cart=cartRepo.findByUserId(userId).orElseThrow(()-> new ResourceNotFoundException("Cart not found for the user"));
 
-        List<CartItems> items=cart.getCartItems();
+        Page<CartItems> items=cartItemRepo.findAllByCart(cart,pageable);
+        List<CartResponseDTO> cartResponse=new ArrayList<>();
         
         for(CartItems item:items){
             CartResponseDTO cartItems=new CartResponseDTO();
+            cartItems.setProductId(item.getProductId());
+            cartItems.setQuantity(item.getQuantity());
+            cartItems.setPrice(item.getPrice());
+            cartResponse.add(cartItems);
         }
 
-        return items;        
+        return new PageCartResponse(cartResponse,items.getNumber(),items.getTotalPages(),items.getTotalElements());        
     }
 
     @Transactional
@@ -362,7 +370,21 @@ public class OrderService {
             notification.setType(NotificationType.ORDER_CONFIRMED);
             notification.setMessage("Your order has been placed");
 
-            kafkaTemplate.send("order-confirmed",notification);
+            kafkaTemplate.send("order-confirmed", notification)
+        .whenComplete((result, ex) -> {
+            if (ex != null) {
+                System.out.println("Kafka send FAILED: " + ex.getMessage());
+            } else {
+                System.out.println(
+                    "Kafka send SUCCESS - topic: "
+                    + result.getRecordMetadata().topic()
+                    + ", partition: "
+                    + result.getRecordMetadata().partition()
+                    + ", offset: "
+                    + result.getRecordMetadata().offset()
+                );
+            }
+        });
         
 
 

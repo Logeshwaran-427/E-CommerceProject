@@ -2,6 +2,7 @@ package com.project.ORDER.Controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.project.ORDER.DTO.CartDTO;
 import com.project.ORDER.Entities.Cart;
 import com.project.ORDER.Entities.CartItems;
+import com.project.ORDER.ResponseDTO.PageCartResponse;
 import com.project.ORDER.Service.OrderService;
 
 import jakarta.validation.Valid;
@@ -31,12 +33,12 @@ public class CartController {
         this.orderService = orderService;
     }
 
-    @PostMapping("/addTocart")
+    @PostMapping("/addToCart")
     public String addCart(@RequestBody @Valid  CartDTO cartDTO) {
         return orderService.addToCart(cartDTO);
     }
     
-    @GetMapping("/getMycart")
+    @GetMapping("/getMyCart")
     public Cart myCart() {
         return orderService.getMycart();
     }
@@ -57,8 +59,8 @@ public class CartController {
     }    
     
     @GetMapping("/getMyCartItems")
-    public List<CartItems> getMethodName() {
-        return orderService.myCartItems();
+    public PageCartResponse getMethodName(Pageable pageable) {
+        return orderService.myCartItems(pageable);
     }
     
     

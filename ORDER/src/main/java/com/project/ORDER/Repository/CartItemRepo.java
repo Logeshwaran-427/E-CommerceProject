@@ -1,5 +1,7 @@
 package com.project.ORDER.Repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -19,5 +21,7 @@ public interface CartItemRepo extends JpaRepository<CartItems,Long>{
     List<CartItems> findAllByCart(Cart cart);
 
     List<CartItems> findAllByCartAndProductIdIn(Cart cart,List<Long> productIds);
+
+    Page<CartItems> findAllByCart(Cart cart, Pageable pageable);
     
 }

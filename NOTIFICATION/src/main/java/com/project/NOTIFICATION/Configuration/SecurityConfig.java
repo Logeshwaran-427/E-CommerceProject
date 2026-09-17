@@ -23,10 +23,10 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity){
-        httpSecurity.csrf(csrf->csrf.disable()).
+        httpSecurity.csrf(csrf->csrf.disable()).headers(frame->frame.disable()).
                 authorizeHttpRequests(req->req.requestMatchers("/h2-console/**","/favicon.ico").permitAll().anyRequest().authenticated()).
                 addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return httpSecurity.build();
     }
     
-}
+} 
