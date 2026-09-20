@@ -31,7 +31,7 @@ public class NotificationService {
     @KafkaListener(topics = {"order-confirmed","order-shipped","order-delivered"})
     public void sendOrderNotification(OrderStatusNotification orderNotification){
 
-        System.out.println("User "+ orderNotification.getUserId() + "received notification for "+ orderNotification.getType() );
+        System.out.println("User "+ orderNotification.getUserId() + " received notification for "+ orderNotification.getType() );
 
         Notifications notifications=new Notifications();
         notifications.setUserId(orderNotification.getUserId());
