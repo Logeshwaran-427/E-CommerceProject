@@ -28,7 +28,7 @@ public class NotificationService {
         this.notificationRepository=notificationRepository;
     }
 
-    @KafkaListener(topics = {"order-confirmed","order-shipped","order-delivered"})
+    @KafkaListener(topics = {"order-confirmed","order-shipped","order-delivered"},containerFactory = "orderStatusKafkaListenerContainerFactory")
     public void sendOrderNotification(OrderStatusNotification orderNotification){
 
         System.out.println("User "+ orderNotification.getUserId() + " received notification for "+ orderNotification.getType() );
@@ -43,7 +43,7 @@ public class NotificationService {
         notificationRepository.save(notifications);
     }
 
-    @KafkaListener(topics = {"orderItem-shipped","orderItem-delivered"})
+    @KafkaListener(topics = {"orderItem-shipped","orderItem-delivered"},containerFactory = "orderItemStatusKafkaListenerContainerFactory")
     public void sendOrderItemNotification(OrderItemStatusNotification orderItemStatusNotification){
         System.out.println("User "+ orderItemStatusNotification.getUserId() + "received notification for "+ orderItemStatusNotification.getType() );
         Notifications notifications=new Notifications();
