@@ -35,39 +35,44 @@ public class OrderController {
     public OrderController(OrderService orderService) {
         this.orderService = orderService;
     }
-
+    
+    @PreAuthorize("hasAnyRole('USER','PRODUCT_OWNER')")
     @PostMapping("/placeOrder")
     public String placeOrder(@RequestBody PlaceOrderRequestDTO placeOrderRequestDTO){
         return orderService.placeOrder(placeOrderRequestDTO);
     }
 
+    @PreAuthorize("hasAnyRole('USER','PRODUCT_OWNER')")
     @PatchMapping("/confirmOrder/{id}")
     public void confirmOrder(@PathVariable Long id){
          orderService.confirmOrder(id);
     }
     
+    @PreAuthorize("hasAnyRole('USER','PRODUCT_OWNER')")
     @PostMapping("/checkOutCart")
     public String checkOutCart(@RequestBody CheckoutCartRequest checkoutCartRequest) {    
         return orderService.checkoutCart(checkoutCartRequest);
     }
     
+    @PreAuthorize("hasAnyRole('USER','PRODUCT_OWNER')")
     @PostMapping("/buyNow")
-    public String directlyPlaceOrder(@RequestBody PlaceDirectOrderRequest placeDirectOrderRequest) {
-        //TODO: process POST request
-        
+    public String directlyPlaceOrder(@RequestBody PlaceDirectOrderRequest placeDirectOrderRequest) { 
         return orderService.directOrder(placeDirectOrderRequest);
     }
     
+    @PreAuthorize("hasAnyRole('USER','PRODUCT_OWNER')")
     @GetMapping("/getMyOrders")
     public List<Order1> getMyOrders() {
         return orderService.getMyOrders();
     }
-    
+
+    @PreAuthorize("hasAnyRole('USER','PRODUCT_OWNER')")
     @GetMapping("/getOrderitems/{orderId}")
     public List<OrderItem> getOrderItems(@PathVariable Long orderId) {
         return orderService.getOrderItems(orderId);
     }
 
+    @PreAuthorize("hasRole('PRODUCT_OWNER')")
     @PatchMapping("/shipProducts/{orderId}")
     public String shippingProducts(@PathVariable Long orderId){
         return orderService.shipProduct(orderId);
@@ -86,26 +91,31 @@ public class OrderController {
         return orderService.addAddress(address);
     }
 
+    @PreAuthorize("hasAnyRole('USER','PRODUCT_OWNER')")
     @PatchMapping("/cancelOrder/{orderId}")
     public String cancelOrder(@PathVariable Long orderId){
         return orderService.cancelOrder(orderId);
     }
     
+    @PreAuthorize("hasRole('PRODUCT_OWNER')")
     @GetMapping("/seller/myProductOrders")
     public List<SellerOrderResponse> myProductOrders() {
         return orderService.sellerOrders();
     }
 
+    @PreAuthorize("hasRole('PRODUCT_OWNER')")
     @GetMapping("/seller/status/{itemStatus}")
     public List<SellerOrderResponse> myOrderStatus(@PathVariable OrderItemStatus itemStatus) {
         return orderService.getOrderItemsByStatus(itemStatus);
     }
 
+    @PreAuthorize("hasRole('PRODUCT_OWNER')")
     @GetMapping("/seller/dashboard")
     public SellerDashboardDTO dashboard() {
         return orderService.sellerdahboard();
     }
 
+    @PreAuthorize("hasAnyRole('USER','PRODUCT_OWNER')")
     @PatchMapping("/cancelItem/{orderId}/{orderItemId}")
     public String cancelItem(@PathVariable Long orderId, @PathVariable Long orderItemId){
         return orderService.cancelByOrderItems(orderId, orderItemId);
