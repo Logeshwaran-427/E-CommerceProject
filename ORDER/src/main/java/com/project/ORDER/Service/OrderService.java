@@ -596,7 +596,7 @@ public class OrderService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UserContext userContext = (UserContext) auth.getDetails();
         Long sellerId=userContext.getSellerId();
-        Long userId=userContext.getUserId();
+        // Long userId=userContext.getUserId();
         Order1 order1=orderRepo.findById(orderId).orElseThrow(()->new ResourceNotFoundException("Order not found"));
         logger.info("Seller {} requested shipment for order {}", sellerId, orderId);
 
@@ -604,6 +604,7 @@ public class OrderService {
             throw new BadRequestException("Cancelled orders cannot be shipped");
         }
         List<OrderItem> orderItems=order1.getOrderItems();
+        Long userId=order1.getUserId();
 
         boolean shipped=false;
         for(OrderItem item:orderItems){
@@ -648,7 +649,7 @@ public class OrderService {
             notification.setUserId(userId);
             notification.setOrderId(orderId);
             notification.setType(NotificationType.ORDER_SHIPPED);
-            notification.setMessage("Your order has been placed");
+            notification.setMessage("Your all order items have been shipped");
 
             kafkaTemplate.send("order-shipped",notification);
 
@@ -672,7 +673,7 @@ public class OrderService {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UserContext userContext = (UserContext) auth.getDetails();
-        Long userId=userContext.getUserId();
+        
         String role=userContext.getRole();
         if(!role.equals("ADMIN")){
             throw new AuthorizationException("You are not authorized");
@@ -697,6 +698,7 @@ public class OrderService {
 
         
         List<OrderItem> orderItems=order1.getOrderItems();
+        Long userId=order1.getUserId();
         boolean delivered=false;
         for(OrderItem item:orderItems){
             if(item.getOrderItemStatus()==OrderItemStatus.SHIPPED){
@@ -711,7 +713,7 @@ public class OrderService {
                 notification.setOrderItemId(item.getId());
                 notification.setProductId(item.getProductId());
                 notification.setType(NotificationType.ORDERITEM_DELIVERED);
-                notification.setMessage("Your "+ item.getProductId()+" has been shipped");
+                notification.setMessage("Your "+ item.getProductId()+" has been delivered");
 
                 kafkaTemplate.send("orderItem-delivered",notification);
                 logger.info("OrderItem {} delivered", item.getId());
@@ -735,7 +737,7 @@ public class OrderService {
             notification.setUserId(userId);
             notification.setOrderId(orderId);
             notification.setType(NotificationType.ORDER_DELIVERED);
-            notification.setMessage("Your order has been placed");
+            notification.setMessage("Your all order item have been delivered");
 
             kafkaTemplate.send("order-delivered",notification);
 
